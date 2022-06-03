@@ -1,0 +1,10 @@
+#background {
+  background-image: url('./tile.png');
+  background-repeat: repeat;
+  height: 99.9vh;
+}
+
+.App-header {
+  background-color: rgb(234, 234, 234);
+  min-height: 100vh;
+}
