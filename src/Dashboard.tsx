@@ -26,6 +26,15 @@ class Dashboard extends React.Component {
       this._init = true;
       window.onpointermove = this.onMouseMove;
       window.addEventListener("resize", this.onResize);
+
+      this._mainTag = document.getElementById(Constants.ID_Main) as HTMLElement;
+      this._editTag = document.getElementById(Constants.ID_Edit) as HTMLImageElement;
+      this._backgroundTag = document.getElementById(Constants.ID_Background)! as HTMLImageElement;
+      this._sideMenuTag = document.getElementById(Constants.ID_SideMenu) as HTMLElement;
+      this._sideMenuButtonsTag = document.getElementById(Constants.ID_SideMenuButtons) as HTMLElement;
+      this._sideMenuRowCount = document.getElementById(Constants.ID_SideMenuRowCount) as HTMLInputElement;
+      this._sideMenuColumnCount = document.getElementById(Constants.ID_SideMenuColumnCount) as HTMLInputElement;
+      this._sideMenuSearch = document.getElementById(Constants.ID_SideMenuSearch) as HTMLInputElement;
     }
   }
 
@@ -210,11 +219,10 @@ class Dashboard extends React.Component {
       for (let i = 0; i < this._components.length; i++) {
         if (this._components[i].key === target.id) {
           this._components.splice(i, 1);
+          this.forceUpdate();
           break;
         }
       }
-      
-      this._mainTag.removeChild(target);
     } else if (this.state.isEditMode) {
       let target = e.target;
 
@@ -381,11 +389,12 @@ class Dashboard extends React.Component {
       for (let i = 0; i < this._components.length; i++) {
         if (this._components[i].key === this._currentMovingTag.id) {
           this._components.splice(i, 1);
+          this.forceUpdate();
           break;
         }
       }
       
-      this._mainTag.removeChild(this._currentMovingTag);
+      //this._mainTag.removeChild(this._currentMovingTag);
       this._currentMovingTag = undefined;
     }
 
@@ -393,10 +402,56 @@ class Dashboard extends React.Component {
     this._selectedSideMenuItem = new SideMenuItem();
   }
 
-  private onClosePanel = () => {
-    if (this._currentOpenedTag) {
-      this._mainTag.removeChild(this._currentOpenedTag);
+  private autoScroll(e: any): number[] {
+    let autoScrollX = 0;
+    let autoScrollY = 0;
+
+    if (e.pageX >= window.innerWidth + window.scrollX - (window.scrollbars.visible ? 16 : 0)) {
+      autoScrollX = e.pageX - window.innerWidth - window.scrollX + (window.scrollbars.visible ? 16 : 0);
+    } else if (window.scrollX > 0 && e.pageX <= window.scrollX) {
+      autoScrollX = e.pageX - window.scrollX;
     }
+
+    if (e.pageY >= window.innerHeight + window.scrollY) {
+      autoScrollY = e.pageY - window.innerHeight - window.scrollY;
+    } else if (window.scrollY > 0 && e.pageY <= window.scrollY) {
+      autoScrollY = e.pageY - window.scrollY;
+    }
+
+    if (autoScrollX !== 0 || autoScrollY !== 0) {
+      window.scrollTo(window.scrollX + autoScrollX, window.scrollY + autoScrollY);
+      let currentWidth = this.state.editPosition.x;
+      if (autoScrollX > 0) {
+        currentWidth = window.innerWidth - 120;
+        this.setState({editPosition: {
+          x: window.innerWidth - 120,
+          y: this.state.editPosition.y
+        }});
+  
+        const root = this._mainTag.parentElement!;
+        root.style.width = '99.9vw';
+        this._backgroundTag.style.width = '99.9vw';
+        const maxWidth = Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth);
+        this._backgroundTag.style.width = (99.9) * (maxWidth / window.innerWidth) + 'vw';     
+        root.style.width = this._backgroundTag.style.width;
+      }
+
+      if (autoScrollY > 0) {
+        this.setState({editPosition: {
+          x: currentWidth,
+          y: window.innerHeight - 120
+        }});
+    
+        const root = this._mainTag.parentElement!;
+        root.style.height = '99.9vh';
+        this._backgroundTag.style.height = '99.9vh';
+        const maxHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
+        this._backgroundTag.style.height = (99.9) * (maxHeight / window.innerHeight) + 'vh'; 
+        root.style.height = this._backgroundTag.style.height;
+      }
+    }
+
+    return [autoScrollX, autoScrollY];
   }
 
   private onMouseMove = (e: any) => {
@@ -419,59 +474,12 @@ class Dashboard extends React.Component {
         this._currentMovingTag.setPointerCapture(e.pointerId);
       }
 
-      let autoScrollX = 0;
-      let autoScrollY = 0;
-
-      if (e.pageX >= window.innerWidth + window.scrollX - 20) {
-        autoScrollX = e.pageX - window.innerWidth - window.scrollX + 36;
-      } else if (window.scrollX > 0 && e.pageX <= window.scrollX) {
-        autoScrollX = e.pageX - window.scrollX;
-      }
-
-      if (e.pageY >= window.innerHeight + window.scrollY - 20) {
-        autoScrollY = e.pageY - window.innerHeight - window.scrollY + 20;
-      } else if (window.scrollY > 0 && e.pageY <= window.scrollY) {
-        autoScrollY = e.pageY - window.scrollY;
-      }
-
-      if (autoScrollX !== 0 || autoScrollY !== 0) {
-        window.scrollTo(window.scrollX + autoScrollX, window.scrollY + autoScrollY);
-        let currentWidth = this.state.editPosition.x;
-        if (autoScrollX > 0) {
-          currentWidth = window.innerWidth - 120;
-          this.setState({editPosition: {
-            x: window.innerWidth - 120,
-            y: this.state.editPosition.y
-          }});
-    
-          const root = this._mainTag.parentElement!;
-          root.style.width = '99.9vw';
-          this._backgroundTag.style.width = '99.9vw';
-          const maxWidth = Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth);
-          this._backgroundTag.style.width = (99.9) * (maxWidth / window.innerWidth) + 'vw';     
-          root.style.width = this._backgroundTag.style.width;
-        }
-
-        if (autoScrollY > 0) {
-          this.setState({editPosition: {
-            x: currentWidth,
-            y: window.innerHeight - 120
-          }});
-      
-          const root = this._mainTag.parentElement!;
-          root.style.height = '99.9vh';
-          this._backgroundTag.style.height = '99.9vh';
-          const maxHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
-          this._backgroundTag.style.height = (99.9) * (maxHeight / window.innerHeight) + 'vh'; 
-          root.style.height = this._backgroundTag.style.height;
-        }
-      }
-
       if (this._currentMovingTag) {
         if (e.preventDefault) e.preventDefault();
+        const result = this.autoScroll(e);
         const bounds = this._currentMovingTag.getBoundingClientRect();
-        this._currentMovingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + autoScrollX + 'px';
-        this._currentMovingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + autoScrollY + 'px';
+        this._currentMovingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + result[0] + 'px';
+        this._currentMovingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + result[1] + 'px';
         this._currentMovingTag.setAttribute(Constants.Att_Row, this.getRow(bounds.top + e.movementY * currentZoomRate).toString());
         this._currentMovingTag.setAttribute(Constants.Att_Column, this.getColumn(bounds.left + e.movementX * currentZoomRate).toString());
         this._currentMovingTag.setAttribute(Constants.Att_Priority, '1');
@@ -480,6 +488,7 @@ class Dashboard extends React.Component {
         this._newTag = undefined;
       } else if (this._currentResizingTag) {
         if (e.preventDefault) e.preventDefault();
+        const result = this.autoScroll(e);
         const bounds = this._currentResizingTag.getBoundingClientRect();
         const row = this.getRow(bounds.top + e.movementY * currentZoomRate);
         const column = this.getColumn(bounds.left + e.movementX * currentZoomRate);
@@ -493,40 +502,40 @@ class Dashboard extends React.Component {
         switch (this._currentResizingTag.style.cursor) {
           case 'nwse-resize':
             if (this._currentResizeFlag === 0) {
-              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + 'px';
-              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + result[0] + 'px';
+              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + result[1] + 'px';
+              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate - result[0] + 'px';
+              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate - result[1] + 'px';
             } else {
-              this._currentResizingTag.style.width = bounds.width + e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.height = bounds.height + e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.width = bounds.width + e.movementX * currentZoomRate + result[0] + 'px';
+              this._currentResizingTag.style.height = bounds.height + e.movementY * currentZoomRate + result[1] + 'px';
             }
             break;
           case 'nesw-resize':
             if (this._currentResizeFlag === 0) {
-              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + 'px';
-              this._currentResizingTag.style.width = bounds.width + e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + result[1] + 'px';
+              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate - result[1] + 'px';
+              this._currentResizingTag.style.width = bounds.width + e.movementX * currentZoomRate + result[0] + 'px';
             } else {
-              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.height = bounds.height + e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + result[0] + 'px';
+              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate - result[0] + 'px';
+              this._currentResizingTag.style.height = bounds.height + e.movementY * currentZoomRate + result[1] + 'px';
             }
             break;
           case 'ns-resize':
             if (this._currentResizeFlag === 0) {
-              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + 'px';
-              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.top = bounds.top + window.scrollY + e.movementY * currentZoomRate + result[1] + 'px';
+              this._currentResizingTag.style.height = bounds.height - e.movementY * currentZoomRate - result[1] + 'px';
             } else {
-              this._currentResizingTag.style.height = bounds.height + window.scrollY + e.movementY * currentZoomRate + 'px';
+              this._currentResizingTag.style.height = bounds.height + e.movementY * currentZoomRate + result[1] + 'px';
             }
             break;
           case 'ew-resize':
             if (this._currentResizeFlag === 0) {
-              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + 'px';
-              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate + 'px';
+              this._currentResizingTag.style.left = bounds.left + window.scrollX + e.movementX * currentZoomRate + result[0] + 'px';
+              this._currentResizingTag.style.width = bounds.width - e.movementX * currentZoomRate - result[0] + 'px';
             } else {
-              this._currentResizingTag.style.width = bounds.width + window.scrollX + e.movementX * currentZoomRate + 'px';
+              this._currentResizingTag.style.width = bounds.width + e.movementX * currentZoomRate + result[0] + 'px';
             }
             break;
           default:
@@ -701,25 +710,15 @@ class Dashboard extends React.Component {
       tagElement.style.height = this.getRowY(parseInt(tag.getAttribute(Constants.Att_Row)!) + parseInt(tag.getAttribute(Constants.Att_RowCount)!)) - top - Constants.PanelGap + 'px';  
     }
     
-    const backgroundTag = document.getElementById(Constants.ID_Background)!;
     const maxWidth = Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth);
-    backgroundTag.style.width = 99.9 * (maxWidth / window.innerWidth) + 'vw'; // 100으로하면
+    this._backgroundTag.style.width = 99.9 * (maxWidth / window.innerWidth) + 'vw'; // 100으로하면
     const maxHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
-    backgroundTag.style.height = 99.9 * (maxHeight / window.innerHeight) + 'vh';
-
-    this._mainTag = document.getElementById(Constants.ID_Main) as HTMLElement;
-    this._editTag = document.getElementById(Constants.ID_Edit) as HTMLImageElement;
-    this._backgroundTag = backgroundTag as HTMLImageElement;
-    this._sideMenuTag = document.getElementById(Constants.ID_SideMenu) as HTMLElement;
-    this._sideMenuButtonsTag = document.getElementById(Constants.ID_SideMenuButtons) as HTMLElement;
-    this._sideMenuRowCount = document.getElementById(Constants.ID_SideMenuRowCount) as HTMLInputElement;
-    this._sideMenuColumnCount = document.getElementById(Constants.ID_SideMenuColumnCount) as HTMLInputElement;
-    this._sideMenuSearch = document.getElementById(Constants.ID_SideMenuSearch) as HTMLInputElement;
+    this._backgroundTag.style.height = 99.9 * (maxHeight / window.innerHeight) + 'vh';
   }
 
   registerElement(elementType: string, id: string, title: string, row: number, column: number, rowCount: number, columnCount: number, minRowCount: number, minColumnCount: number, callBack?: () => void): void {
     const element = React.createElement(elementType, { id: id });
-    this._components.push(<DragMove key={id + 'DragMove'} id={id + 'DragMove'} title={title} onLoad={callBack ? callBack : () => {}} onPointerDown={this.onTagMouseDown} onPointerUp={this.onTagMouseUp} onPointerEnter={this.onTagMouseEnter} onPointerLeave={this.onTagMouseLeave} onCloseClick={this.onClosePanel} row={row} column={column} rowCount={rowCount} columnCount={columnCount} minRowCount={minRowCount} minColumnCount={minColumnCount} priority={0}>{element}</DragMove>);
+    this._components.push(<DragMove key={id + 'DragMove'} id={id + 'DragMove'} title={title} onLoad={callBack ? callBack : () => {}} onPointerDown={this.onTagMouseDown} onPointerUp={this.onTagMouseUp} onPointerEnter={this.onTagMouseEnter} onPointerLeave={this.onTagMouseLeave} row={row} column={column} rowCount={rowCount} columnCount={columnCount} minRowCount={minRowCount} minColumnCount={minColumnCount} priority={0}>{element}</DragMove>);
     this.forceUpdate();
   }
 
