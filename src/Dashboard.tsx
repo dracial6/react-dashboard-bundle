@@ -216,13 +216,14 @@ class Dashboard extends React.Component {
         }
       }
 
-      for (let i = 0; i < this._components.length; i++) {
-        if (this._components[i].key === target.id) {
-          this._components.splice(i, 1);
-          this.forceUpdate();
-          break;
-        }
-      }
+      // for (let i = 0; i < this._components.length; i++) {
+      //   if (this._components[i].key === target.id) {
+      //     this._components.splice(i, 1);
+      //     break;
+      //   }
+      // }
+
+      this._mainTag.removeChild(target);
     } else if (this.state.isEditMode) {
       let target = e.target;
 
@@ -386,15 +387,14 @@ class Dashboard extends React.Component {
   
   private onCancelSideMenuClick = (e: any) => {
     if (this._currentMovingTag) {
-      for (let i = 0; i < this._components.length; i++) {
-        if (this._components[i].key === this._currentMovingTag.id) {
-          this._components.splice(i, 1);
-          this.forceUpdate();
-          break;
-        }
-      }
+      // for (let i = 0; i < this._components.length; i++) {
+      //   if (this._components[i].key === this._currentMovingTag.id) {
+      //     this._components.splice(i, 1);
+      //     break;
+      //   }
+      // }
       
-      //this._mainTag.removeChild(this._currentMovingTag);
+      this._mainTag.removeChild(this._currentMovingTag);
       this._currentMovingTag = undefined;
     }
 
@@ -595,7 +595,7 @@ class Dashboard extends React.Component {
 
     if (this.state.isEditMode) {
       const dragMoveTags = document.getElementsByClassName(Constants.Class_DragMoveTag);
-
+      
       for (const tag of dragMoveTags) {
         (tag as HTMLElement).style.cursor = '';
       }
